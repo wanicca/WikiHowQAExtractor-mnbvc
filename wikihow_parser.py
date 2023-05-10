@@ -1,5 +1,5 @@
 """
-Modified from wikiHowUnofficialAPI
+Some code from wikiHowUnofficialAPI
 """
 
 from bs4 import BeautifulSoup
@@ -138,8 +138,8 @@ class Article:
         self._co_authors = None
         self._references = None
         self._summary = None
-        self._warnings = []
-        self._tips = []
+        self._warnings = {"title":"","warnings":[]}
+        self._tips = {"title":"","tips":[]}
 
         self._parsed = False
         if not lazy:
@@ -358,7 +358,7 @@ class Article:
         """
         self._methods = []
         methods_html = soup.findAll(
-            'div', {'class': ['section steps steps_first sticky', 'section steps sticky']})
+            'div', {'class': ['section steps steps_first sticky', 'section steps sticky','section steps steps_first sticky hide_step_numbers','section steps sticky hide_step_numbers']})
         if not methods_html:
             raise ParseError
         else:
@@ -552,19 +552,24 @@ class Article:
         """
         warnings_html_div = soup.find('div', {'id': ['warnings','警告']})
         if not warnings_html_div:
+            self._warnings = {}
             return None
         else:
+            self._warnings['title']=warnings_html_div.findPreviousSibling().text.strip()
             warnings_html = warnings_html_div.find('ul')
             if warnings_html != None:
                 for li in warnings_html.findAll('li',recursive=False):
                     # if not li.find('div'):
                     #     return None
                     # self._warnings.append(li.find('div').text)
-                    self._warnings.append(li.text)
+                    vote = li.find('div',{"class":"wh_vote_container"})
+                    if vote:
+                        vote.decompose()
+                    self._warnings['warnings'].append(li.text)
             else:
                 warnings_html = warnings_html_div.find('p')
                 if warnings_html != None:
-                    self._warnings.append(warnings_html.text)
+                    self._warnings['warnings'].append(warnings_html.text)
                 else:
                     return None
 
@@ -579,8 +584,10 @@ class Article:
         """
         tips_html_div = soup.find('div', {'id': ['tips','小提示']})
         if not tips_html_div:
+            self._tips = {}
             return None
         else:
+            self._tips['title']=tips_html_div.findPreviousSibling().text
             tips_html = tips_html_div.find('ul')
             if tips_html != None:
                 for li in tips_html.findAll('li',recursive=False):
@@ -588,11 +595,14 @@ class Article:
                     #     return None
                     # else:
                     #     self._tips.append(li.find('div').text)
-                    self._tips.append(li.text)
+                    vote = li.find('div',{"class":"wh_vote_container"})
+                    if vote:
+                        vote.decompose()
+                    self._tips['tips'].append(li.text.strip())
             else:
                 tips_html = tips_html_div.find('p')
                 if tips_html != None:
-                    self._tips.append(tips_html.text)
+                    self._tips['tips'].append(tips_html.text.strip())
                 else:
                     return None
 
