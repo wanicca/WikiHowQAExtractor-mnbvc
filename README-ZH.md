@@ -1,28 +1,77 @@
-# WikiHowQAExtractor
-从WikiHow页面抽取中文/英文问答数据
+# WikiHowQAExtractor-mnbvc
+
+## 项目描述
+
+- 本项目主要目的是从WikiHow页面抽取中文/英文问答数据。
+- 可接受的输入为一组HTML文件。或者是一个csv文件，其中`html`列保存了多个页面的HTML代码。
+- 处理结果为jsonl文件，每行对应一个词条页面，包含问答文本，以及可供参考的词条结构，详细格式附后。
+
+## 环境
+
+1. 下载本项目
+```
+git clone WikiHowQAExtractor-mnbvc
+```
+2. 进入目录并安装依赖
+```
+cd WikiHowQA-mnbvc
+pip install -r requirements.txt
+```
 
 ## 用法
 
-```
-python wikihow_extract FILE1 FILE2 ... -o wikihow.jsonl
+通过以下命令将FILE1 FILE2 等输入HTML文件转化并输出到以`wikihow`为名称的结果文件中。
+```shell
+python wikihow_extract.py FILE1 FILE2 ... -o wikihow
 ```
 
-## 结果结构
+或者，当有多个html文件代码存储在单个csv文件中时，使用以下命令转化并输出。
 
+```shell
+python wikihow_extract.py -c CSVFILE -o wikihow
+```
+
+以上两种命令将会输出结果文件`wikihow.0.jsonl`，当结果文件大于件500MB时会分块处理，产生`wikihow.1.jsonl`、`wikihow.2.jsonl`等。
+
+## 注意
+
+1. 本工具会自动跳过无法解析出问题和解决方法的页面，比如已删除页面、分类页面、管理页面。
+2. 暂时未保留图片信息。
+
+## 代码说明
+
+- `wikihow_extract.py` 入口程序
+- `wikihow_parser.py` Wikihow页面解析器，基于Beautifulsoup 
+
+
+## 输出jsonl文件格式
+
+1. 每行为一个jsonl文件，每行是一条问答数据，对应一个WikiHow词条页面。
+2. 对于每一个问答数据，其最高层次结构如下。
 ```json
 {
-    "问题":"...",
-    "回答":[
-        {
-            "回答": "完整回答文本",
-            "简要回答": "回答的摘要",
-            "结构": {
-                ... //回答页面结构，包含方法步骤、小提示、注意事项等
-            }
-        }
-    ]
+    "问题":"问题名称",
+    "回答":[],
 }
 ```
+3. 注意，出于兼容性考虑，`"回答"`是一个列表。在本项目产生的数据中，只可能会有一个回答。回答的结构如下。
+```json
+{
+    "回答": "完整回答文本，包含方法、提示、注意事项",
+    "简要回答": "回答的摘要文本，来自WikiHow的页面开头信息，概括了页面的主要内容",
+    "结构": {}
+}
+```
+4. 每个回答除了回答文本、简要回答文本以外，还有可供参考使用的结构信息，该对象的结构如下。
+```json
+"结构": {
+    "方法":[],
+    "小提示":[],
+    "注意事项":[]
+}
+```
+5. 方法内部的结构包括编号、标题、步骤，每个步骤包括自己的编号、标题、描述，具体可参考下面的结果示例。
+6. 小提示、注意事项为字符串列表，没有更进一步的结构。
 
 ## 结果示例
 
