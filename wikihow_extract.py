@@ -1,16 +1,18 @@
 #%%
 from wikihow_parser import Article
-import json,traceback,csv
+import json,traceback,csv,time
 from tqdm.auto import tqdm
 #%%
 
 #scheme
 ID = "编号"
-Q = "问题"
-A = "回答"
+Q = "问"
+A = "答"
+ANSWER = "回答"
+META = "元数据"
 A_SUM = "简要回答"
-PREV = "前承"
-NEXT = "后续"
+# PREV = "前承"
+# NEXT = "后续"
 A_STRUCT = "结构"
 METHOD = "方法"
 STEP = "步骤"
@@ -39,17 +41,18 @@ def process_page(page):
             answer += f"{description}\n"
             method_struct[STEP].append({NUMBER:step.number,TITLE:step.title.strip(), DESC:description.strip()})
         answer_struct[METHOD].append(method_struct)
-    if article.tips:
-        answer+=article.tips['title']+'\n'
+    if article.tips and article.tips['tips']:
+        answer+=article.tips['title'].strip()+'\n'
         for tip in article.tips['tips']:
             answer+=tip.replace("\t","").strip() + '\n'
-        method_struct[TIPS] = [tip.replace("\t","").strip()+"\n" for tip in article.tips]
-    if article.warnings:
-        answer+=article.warnings['title']+'\n'
+        method_struct[TIPS] = [tip.replace("\t","").strip()+"\n" for tip in article.tips['tips']]
+    if article.warnings and article.warnings['warnings']:
+        answer+=article.warnings['title'].strip()+'\n'
         for warn in article.warnings['warnings']:
             answer+=warn.replace("\t","").strip() + '\n'
-        method_struct[WARN] = [warn.replace("\t","").strip() + '\n' for warn in article.warnings]
-    result = {Q:title,A:[{A:answer,A_SUM:answer_sum,A_STRUCT:answer_struct}],}
+        method_struct[WARN] = [warn.replace("\t","").strip() + '\n' for warn in article.warnings['warnings']]
+    # result = {Q:title,A:[{A:answer,A_SUM:answer_sum,A_STRUCT:answer_struct}],}
+    result = {Q:title,A:answer,META:{"create_time":time.strftime('%Y%m%d %H:%M:%S'),"回答明细":{ANSWER:answer,A_SUM:answer_sum,A_STRUCT:answer_struct}}}
     return result
 # %%
 if __name__ == "__main__":
@@ -66,9 +69,10 @@ if __name__ == "__main__":
     for filepath in tqdm(args.source_files):
         with open(filepath) as f:
             try:
-                result = process_page(f.read())
+                result = {"id":i}
+                result.update(process_page(d['html']))
             except Exception as e:
-                # traceback.print_exc()
+                traceback.print_exc()
                 print("Failed to process", filepath)
                 continue
             print(json.dumps(result,ensure_ascii=False),file=of)
@@ -82,9 +86,10 @@ if __name__ == "__main__":
             reader = csv.DictReader(f)
             for i,d in enumerate(tqdm(reader)):
                 try:
-                    result = process_page(d['html'])
+                    result = {"id":i}
+                    result.update(process_page(d['html']))
                 except Exception as e:
-                    # traceback.print_exc()
+                    traceback.print_exc()
                     print("Failed to process csv index",i,d["_id"])
                     continue        
                 print(json.dumps(result,ensure_ascii=False),file=of)
