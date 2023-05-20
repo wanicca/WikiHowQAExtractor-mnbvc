@@ -48,7 +48,7 @@ python wikihow_extract.py -c CSVFILE -o wikihow
 
 ## 输出jsonl文件格式
 
-1. 每行为一个jsonl文件，每行是一条问答数据，对应一个WikiHow词条页面。
+1. 每个jsonl文件，其大小略大于500MB。每行是一条问答数据，对应一个WikiHow词条页面。
 2. 对于每一个问答数据，其最高层次结构如下。
 ```json
 {
